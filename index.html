@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bug Squish Game</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #camera {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .bug {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: url('https://i.ibb.co/p4jmr4P/cartoon-bug.png') no-repeat center/contain;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .squished {
+      background: url('https://i.ibb.co/tP31mgB/squished-bug.png') no-repeat center/contain;
+      transform: scale(0.7) rotate(30deg);
+      pointer-events: none;
+    }
+    #ui {
+      position: fixed;
+      top: 10px; left: 10px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <video id="camera" autoplay playsinline></video>
+  <div id="ui">
+    <span id="score">Score: 0</span> | 
+    <span id="timer">Time: 300</span>
+  </div>
+
+  <script>
+    const camera = document.getElementById("camera");
+    const scoreEl = document.getElementById("score");
+    const timerEl = document.getElementById("timer");
+
+    let score = 0;
+    let bugs = [];
+    let roundTime = 300; // 5 minutes in seconds
+    let gameInterval, timerInterval;
+
+    // Camera setup
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        camera.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Camera error:", err);
+      });
+
+    function spawnBug() {
+      const bug = document.createElement("div");
+      bug.classList.add("bug");
+      bug.style.left = Math.random() * (window.innerWidth - 60) + "px";
+      bug.style.top = Math.random() * (window.innerHeight - 60) + "px";
+
+      bug.addEventListener("click", () => {
+        if (!bug.classList.contains("squished")) {
+          bug.classList.add("squished");
+          score++;
+          scoreEl.textContent = "Score: " + score;
+        }
+      });
+
+      document.body.appendChild(bug);
+      bugs.push(bug);
+    }
+
+    function startRound() {
+      score = 0;
+      roundTime = 300;
+      scoreEl.textContent = "Score: 0";
+      timerEl.textContent = "Time: 300";
+
+      // Remove old bugs
+      bugs.forEach(b => b.remove());
+      bugs = [];
+
+      // Spawn bugs periodically
+      if (gameInterval) clearInterval(gameInterval);
+      gameInterval = setInterval(spawnBug, 1000);
+
+      // Timer countdown
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        roundTime--;
+        timerEl.textContent = "Time: " + roundTime;
+
+        if (roundTime <= 0) {
+          endRound();
+        }
+      }, 1000);
+    }
+
+    function endRound() {
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      alert("Round over! Final Score: " + score);
+      startRound(); // auto start new round
+    }
+
+    // Start the first round
+    startRound();
+  </script>
+</body>
+</html>
